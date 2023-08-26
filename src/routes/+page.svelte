@@ -5,16 +5,17 @@
 	import type {
 		IAgoraRTC,
 		IAgoraRTCClient,
+		IAgoraRTCRemoteUser,
 		IMicrophoneAudioTrack,
 		IRemoteAudioTrack
 	} from 'agora-rtc-sdk-ng';
 	import { onMount } from 'svelte';
-
+	let users: IAgoraRTCRemoteUser[] = [];
 	let appId: string = '1eb79e166f7243de8a37514b86d967b0';
 	let channel: string = 'test';
 	let token: string =
 		'007eJxTYHi3n3ninSWl02M+uPEUNybMU0u8VGbg/jAovf7f7QnailoKDIapSeaWqYZmZmnmRibGKakWicbmpoYmSRZmKZZm5kkG29pepjQEMjIIOV5lZmSAQBCfhaEktbiEgQEAWOUfbg==';
-	let uid: string = 'e1ea743f602048b3adf45f0a8d17d3bc';
+	let uid: string;
 
 	let channelParams = {
 		// @ts-ignore
@@ -31,8 +32,10 @@
 		agoraEngine = agoraRTC.createClient({ mode: 'rtc', codec: 'vp9' });
 		async function startBasicCall() {
 			agoraEngine.on('user-published', async (user, mediaType) => {
+				console.log('subscribe success*******************************************************');
 				await agoraEngine.subscribe(user, mediaType);
-				console.log('subscribe success');
+
+				users = [...users, user];
 
 				if (mediaType == 'audio') {
 					channelParams.remoteUid = user.uid;
@@ -43,11 +46,15 @@
 				}
 
 				agoraEngine.on('user-unpublished', (user) => {
-					console.log(user.uid, 'has left the channel');
+					console.log(
+						user.uid,
+						'has left the channel *************************************************'
+					);
+					users = users.filter((u) => u.uid !== user.uid);
 				});
 			});
 		}
-		startBasicCall();
+		await startBasicCall();
 	});
 
 	async function join() {
@@ -57,7 +64,7 @@
 		channelParams.localAudioTrack = await agoraRTC.createMicrophoneAudioTrack();
 
 		await agoraEngine.publish(channelParams.localAudioTrack);
-		console.log('Publish success!');
+		console.log('Publish success!****************************************');
 	}
 
 	async function leave() {
@@ -81,4 +88,8 @@
 	</div>
 </div>
 <br />
+
+<div>
+	{#each users as user}{/each}
+</div>
 <div id="message" />
